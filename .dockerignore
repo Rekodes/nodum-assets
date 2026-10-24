@@ -1,0 +1,3 @@
+*
+!shared/*.py
+!algorithms/*/*.py

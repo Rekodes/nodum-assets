@@ -1,0 +1,80 @@
+# Publicar en Nodum
+
+Una ficha por asset, en el orden del formulario de **Publicar**. Lo que va en `código` se pega tal cual.
+
+- **Primero los algoritmos:** los genéricos los publica un operador, con **Genérico** marcado. Así salen ya
+  elegidos como de confianza al publicar los datasets.
+- **Cabeceras de la petición:** ninguna; los datos se sirven sin clave.
+- **Etiquetas:** la línea entera se pega de una vez; cada coma separa una etiqueta.
+
+## Algoritmos
+
+### Informe de calidad de datos
+
+| Paso | Campo | Valor |
+|---|---|---|
+| Tipo | Qué publicas | Un algoritmo |
+| | Tipo de algoritmo | Un script |
+| Origen | Entorno | Python 3.15 |
+| | De dónde sale | Un fichero de GitHub |
+| | Fichero de GitHub | `github.com/Rekodes/nodum-assets/blob/main/algorithms/generic/data_quality.py` |
+| Datos | Nombre | `Informe de calidad de datos` |
+| | Descripción | Mide la calidad de cada fichero CSV, TSV, JSON o JSONL: celdas vacías, filas repetidas, tipos por columna, atípicos, fechas imposibles y filas que no cuadran con la cabecera. Da una nota de 0 a 100 con su desglose. No copia ningún valor de las celdas: solo recuentos, porcentajes y estadísticos numéricos. |
+| | Etiquetas | `calidad-de-datos, benchmarking, perfilado, csv, json` |
+| Nodos | Dónde podrá ejecutarse | Nodo 1, Nodo 2 y Nodo 3 |
+| | Necesita internet al ejecutarse | No |
+| | Formatos que lee | CSV, TSV, JSON y JSON Lines |
+| | Genérico | Sí |
+| Se prueba con | | Los dos datasets |
+
+### Contar líneas
+
+| Paso | Campo | Valor |
+|---|---|---|
+| Tipo | Qué publicas | Un algoritmo |
+| | Tipo de algoritmo | Imagen y código de GitHub |
+| Origen | Imagen con etiqueta | `docker.io/rekodes/nodum-line-count:0.2.0` |
+| | Entrypoint | `python /app/main.py` |
+| | Fichero de GitHub | `github.com/Rekodes/nodum-assets/blob/main/algorithms/generic/line_count.py` |
+| Datos | Nombre | `Contar líneas` |
+| | Descripción | Cuenta las líneas y los bytes de cada dataset de entrada y deja el resultado en line-count.json. |
+| | Etiquetas | `generico, prueba` |
+| Nodos | Dónde podrá ejecutarse | Nodo 1, Nodo 2 y Nodo 3 |
+| | Necesita internet al ejecutarse | No |
+| | Formatos que lee | CSV, TSV, JSON, JSON Lines, XML y Texto |
+| | Genérico | Sí |
+| Se prueba con | | Cualquiera |
+
+**Parámetros**
+
+| Nombre | Etiqueta | Tipo | Valor por defecto | Descripción | Obligatorio |
+|---|---|---|---|---|---|
+| `skip_header` | Saltar la cabecera | Sí o no | `No` | No cuenta la primera línea de cada fichero. | No |
+
+## Datasets
+
+### Maíz · estrés hídrico en tres fincas
+
+| Paso | Campo | Valor |
+|---|---|---|
+| Tipo | Qué publicas | Un dataset |
+| Origen | Nodo | Nodo 1 |
+| | URL del fichero | `https://raw.githubusercontent.com/Rekodes/nodum-assets/main/datasets/agro/sinteticos/maiz-estres-hidrico/v1/todas.json` |
+| | Cabeceras de la petición | Ninguna |
+| Datos | Nombre | `Maíz · estrés hídrico en tres fincas` |
+| | Descripción | 2160 lecturas horarias de tres fincas de maíz en julio de 2026 (llanura manchega, meseta del Duero y vega del Ebro), cada una con su suelo y su riego. Ola de calor del 12 al 17 y una tormenta en cada finca. Sintético. |
+| | Etiquetas | `maiz, finca, estres-hidrico, json` |
+| Confianza | Algoritmos | Los dos genéricos (salen ya elegidos) |
+
+### Pesca · primera venta en lonjas de Galicia (2025)
+
+| Paso | Campo | Valor |
+|---|---|---|
+| Tipo | Qué publicas | Un dataset |
+| Origen | Nodo | Nodo 1 |
+| | URL del fichero | `https://raw.githubusercontent.com/Rekodes/nodum-assets/main/datasets/marine/sinteticos/primera-venta-galicia/v1/lonjas-2025.csv` |
+| | Cabeceras de la petición | Ninguna |
+| Datos | Nombre | `Pesca · primera venta en lonjas de Galicia (2025)` |
+| | Descripción | 9986 ventas diarias de 14 especies en 10 lonjas gallegas durante 2025: kilos, precio medio por kilo e importe, con su arte y su código FAO. Épocas, vedas y precios aproximados a las estadísticas públicas de primera venta; ninguna cifra es real. Sintético. |
+| | Etiquetas | `pesca, lonja, galicia, primera-venta, csv` |
+| Confianza | Algoritmos | Los dos genéricos (salen ya elegidos) |
