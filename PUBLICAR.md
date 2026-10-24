@@ -78,3 +78,18 @@ Una ficha por asset, en el orden del formulario de **Publicar**. Lo que va en `c
 | | Descripción | 9986 ventas diarias de 14 especies en 10 lonjas gallegas durante 2025: kilos, precio medio por kilo e importe, con su arte y su código FAO. Épocas, vedas y precios aproximados a las estadísticas públicas de primera venta; ninguna cifra es real. Sintético. |
 | | Etiquetas | `pesca, lonja, galicia, primera-venta, csv` |
 | Confianza | Algoritmos | Los dos genéricos (salen ya elegidos) |
+
+### Diabetes · pacientes de atención primaria
+
+Lo publica otra cuenta, no la del operador: así se puede comprar su acceso desde la tuya.
+
+| Paso | Campo | Valor |
+|---|---|---|
+| Tipo | Qué publicas | Un dataset |
+| Origen | Nodo | Nodo 2 |
+| | URL del fichero | `https://raw.githubusercontent.com/Rekodes/nodum-assets/main/datasets/health/sinteticos/diabetes-atencion-primaria/v1/pacientes.csv` |
+| | Cabeceras de la petición | Ninguna |
+| Datos | Nombre | `Diabetes · pacientes de atención primaria` |
+| | Descripción | 2000 pacientes adultos sintéticos con edad, IMC, cintura, tensión, glucosa, HbA1c, perfil lipídico y hábitos, y si tienen diabetes tipo 2 (14 %). Prevalencia y umbrales de diagnóstico como en las cifras públicas (di@bet.es, ADA); nadie existe. Con huecos en cintura y lípidos, como una historia real. |
+| | Etiquetas | `salud, diabetes, atencion-primaria, sintetico, csv` |
+| Confianza | Algoritmos | Los dos genéricos (salen ya elegidos) |
