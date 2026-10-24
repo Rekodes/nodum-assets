@@ -14,6 +14,7 @@ Primero, qué tipo de cosa es: `datasets/` (lo que se publica para que otros lo 
 | [`algorithms/generic/`](algorithms/generic/) | Los dos genéricos: valen para cualquier dataset y salen ya elegidos al publicar uno |
 | [`datasets/agro/`](datasets/agro/) | Maíz: tres fincas con estrés hídrico, en un fichero |
 | [`datasets/marine/`](datasets/marine/) | Pesca: un año de primera venta en lonjas de Galicia |
+| [`datasets/health/`](datasets/health/) | Salud: pacientes de atención primaria con y sin diabetes tipo 2 |
 | [`shared/`](shared/) | El contrato con ocean-node (`ocean_app.py`) y el Dockerfile de las imágenes |
 | [`scripts/`](scripts/) | `push_images.py`, que sube las imágenes a Docker Hub |
 
