@@ -67,7 +67,7 @@ Una ficha por asset, en el orden del formulario de **Publicar**. Lo que va en `c
 | | Necesita internet al ejecutarse | No |
 | | Formatos que lee | CSV |
 | | Genérico | No |
-| Parámetros | | Los de [su tabla](algorithms/federated/README.md), todos obligatorios |
+| Parámetros | | Los de [su tabla](algorithms/federated/README.md) |
 
 ## Datasets
 

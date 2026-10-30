@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 # Un paso de FedAvg: entrena la MLP recibida y devuelve sus weights.
 #
-# MLP (multilayer perceptron): capas densas con ReLU entre ellas. Aquí 2-32-32-2: entran x1 y x2,
-# salen los logits de las dos clases; 1 218 weights en total (ver LAYER_SIZES).
+# MLP (multilayer perceptron): capas densas con ReLU entre ellas. Sin `schema`, 2-32-32-2: entran x1 y x2, salen los
+# logits de las dos clases; 1 218 weights en total (ver LAYER_SIZES).
 # Sirve para silo y centralizado: solo cambian el dataset y los epochs.
 # SGD porque no tiene estado: Adam perdería sus momentos entre dos trabajos.
 #
-# Entradas (ocean-node 4.5): el CSV `x1,x2,label` en /data/inputs/<i>/ y los parámetros en
-# /data/inputs/algoCustomData.json. Salida: /data/outputs/update.json.
+# Entradas (ocean-node 4.5): el CSV en /data/inputs/<i>/ y los parámetros en /data/inputs/algoCustomData.json.
+# Salida: /data/outputs/update.json.
+#
+# `schema` (parámetro opcional, JSON) dice qué columnas entran y es igual en todos los sitios:
+#   target, classes: la columna objetivo y sus valores; una fila sin un valor de `classes` se ignora.
+#   numeric: {columna: [media, desviación]}; un valor vacío o que no es un número queda en la media.
+#   categorical: {columna: [valores]}, en one-hot; un valor vacío o desconocido deja todo a cero.
+#   hidden: el tamaño de cada capa oculta.
 # La salida lleva pesos y métricas agregadas, nunca filas. Solo biblioteca estándar; no usa la red.
 
 import base64
@@ -22,14 +28,33 @@ import sys
 import time
 from pathlib import Path
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 INPUTS_DIR = Path(os.environ.get("FEDAVG_INPUTS_DIR", "/data/inputs"))
 OUTPUTS_DIR = Path(os.environ.get("FEDAVG_OUTPUTS_DIR", "/data/outputs"))
+DEFAULT_SCHEMA: dict = {
+    "target": "label",
+    "classes": ["0", "1"],
+    "numeric": {"x1": [0.0, 1.0], "x2": [0.0, 1.0]},
+    "categorical": {},
+    "hidden": [32, 32],
+}
+schema = DEFAULT_SCHEMA
 LAYER_SIZES = (2, 32, 32, 2)
 N_WEIGHTS = sum((n_in + 1) * n_out for n_in, n_out in zip(LAYER_SIZES, LAYER_SIZES[1:], strict=False))
 
 type Sample = tuple[list[float], int]
 type Layer = tuple[list[list[float]], list[float]]
+
+
+def configure(new_schema: dict | None = None) -> None:
+    """Fija el esquema y, con él, la arquitectura. Sin esquema, el de `DEFAULT_SCHEMA`."""
+    global schema, LAYER_SIZES, N_WEIGHTS
+    schema = new_schema or DEFAULT_SCHEMA
+    n_inputs = len(schema["numeric"]) + sum(len(values) for values in schema["categorical"].values())
+    if not n_inputs or len(schema["classes"]) < 2:
+        raise ValueError("el esquema necesita al menos una columna de entrada y dos clases")
+    LAYER_SIZES = (n_inputs, *schema["hidden"], len(schema["classes"]))
+    N_WEIGHTS = sum((n_in + 1) * n_out for n_in, n_out in zip(LAYER_SIZES, LAYER_SIZES[1:], strict=False))
 
 
 def init_weights(seed: int) -> list[float]:
@@ -146,9 +171,27 @@ def evaluate(weights: list[float], samples: list[Sample]) -> dict[str, float]:
     return {"loss": loss / len(samples), "accuracy": hits / len(samples)}
 
 
+def _scaled(text: str, mean: float, spread: float) -> float:
+    """Normalizado; 0, la media, si no es un número."""
+    try:
+        value = float(text)
+    except ValueError:
+        return 0.0
+    return (value - mean) / (spread or 1.0) if math.isfinite(value) else 0.0
+
+
+def _encode(row: dict[str, str]) -> list[float]:
+    inputs = [_scaled(row[name], *stats) for name, stats in schema["numeric"].items()]
+    for name, values in schema["categorical"].items():
+        inputs += [1.0 if row[name] == value else 0.0 for value in values]
+    return inputs
+
+
 def read_samples(path: Path) -> list[Sample]:
+    classes = {name: index for index, name in enumerate(schema["classes"])}
     with path.open(newline="", encoding="utf-8") as handle:
-        return [([float(row["x1"]), float(row["x2"])], int(row["label"])) for row in csv.DictReader(handle)]
+        return [(_encode(row), classes[row[schema["target"]]]) for row in csv.DictReader(handle)
+                if row[schema["target"]] in classes]
 
 
 def _dataset_path(parameters: dict) -> Path:
@@ -163,6 +206,8 @@ def _dataset_path(parameters: dict) -> Path:
 
 def run() -> None:
     parameters = json.loads((INPUTS_DIR / "algoCustomData.json").read_text(encoding="utf-8"))
+    given = parameters.get("schema")
+    configure(json.loads(given) if given else None)
     encoded = str(parameters["model"])
     samples = read_samples(_dataset_path(parameters))
     weights = decode_weights(encoded)
