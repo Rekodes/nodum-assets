@@ -1,4 +1,4 @@
-# Laboratorio
+# Federado
 
 Datos sintéticos para probar el aprendizaje federado. Nadie existe y cada fichero sale de un generador con
 semilla.
@@ -15,4 +15,4 @@ Dos clases en forma de luna, con 800 filas por silo y desequilibrio de etiqueta.
 | `total.csv` | 2 400 | 50 % | El brazo centralizado: exactamente las filas de los tres silos |
 | `test.csv` | 600 | 50 % | El test común. No se publica: lo evalúa quien orquesta |
 
-El algoritmo que los usa es [`fedavg_mlp.py`](../../algorithms/lab/fedavg_mlp.py).
+El algoritmo que los usa es [`fedavg_mlp.py`](../../algorithms/federated/fedavg_mlp.py).

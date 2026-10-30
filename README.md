@@ -12,9 +12,11 @@ Primero, qué tipo de cosa es: `datasets/` (lo que se publica para que otros lo 
 | Carpeta | Qué hay |
 |---|---|
 | [`algorithms/generic/`](algorithms/generic/) | Los dos genéricos: valen para cualquier dataset y salen ya elegidos al publicar uno |
+| [`algorithms/federated/`](algorithms/federated/) | FedAvg: el paso de entrenamiento que corre en cada sitio |
 | [`datasets/agro/`](datasets/agro/) | Maíz: tres fincas con estrés hídrico, en un fichero |
 | [`datasets/marine/`](datasets/marine/) | Pesca: un año de primera venta en lonjas de Galicia |
 | [`datasets/health/`](datasets/health/) | Salud: pacientes de atención primaria con y sin diabetes tipo 2 |
+| [`datasets/federated/`](datasets/federated/) | Lunas: tres silos no-IID, su unión para el centralizado y el test común |
 | [`shared/`](shared/) | El contrato con ocean-node (`ocean_app.py`) y el Dockerfile de las imágenes |
 | [`scripts/`](scripts/) | `push_images.py`, que sube las imágenes a Docker Hub |
 
@@ -25,7 +27,7 @@ Python, solo la biblioteca estándar y sin red. Dos formas:
 - **Con imagen** (`line_count.py`): importa `shared/ocean_app.py`, que cumple el contrato con el nodo
   (entradas en `/data/inputs`, parámetros en `algoCustomData.json`, salidas en `/data/outputs`). Se
   construye con `shared/Dockerfile` como `docker.io/rekodes/nodum-<algoritmo>:0.2.0`.
-- **Script** (`data_quality.py`): un fichero suelto que corre en un entorno de Nodum (`python-3.15`).
+- **Script** (`data_quality.py`, `fedavg_mlp.py`): un fichero suelto que corre en un entorno de Nodum (`python-3.15`).
   Se publica desde GitHub, con el commit fijado.
 
 ## Datasets
