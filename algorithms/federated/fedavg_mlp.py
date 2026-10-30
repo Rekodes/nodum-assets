@@ -9,6 +9,9 @@
 # Entradas (ocean-node 4.5): el CSV en /data/inputs/<i>/ y los parámetros en /data/inputs/algoCustomData.json.
 # Salida: /data/outputs/update.json.
 #
+# El modelo llega en el parámetro `model` o, con `model_file`, en un fichero de ese nombre entre las entradas.
+# Con `mode` = `evaluate` no entrena: mide el modelo sobre el dataset y solo devuelve métricas agregadas.
+#
 # `schema` (parámetro opcional, JSON) dice qué columnas entran y es igual en todos los sitios:
 #   target, classes: la columna objetivo y sus valores; una fila sin un valor de `classes` se ignora.
 #   numeric: {columna: [media, desviación]}; un valor vacío o que no es un número queda en la media.
@@ -28,7 +31,7 @@ import sys
 import time
 from pathlib import Path
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 INPUTS_DIR = Path(os.environ.get("FEDAVG_INPUTS_DIR", "/data/inputs"))
 OUTPUTS_DIR = Path(os.environ.get("FEDAVG_OUTPUTS_DIR", "/data/outputs"))
 DEFAULT_SCHEMA: dict = {
@@ -194,23 +197,58 @@ def read_samples(path: Path) -> list[Sample]:
                 if row[schema["target"]] in classes]
 
 
+def balanced_accuracy(weights: list[float], samples: list[Sample]) -> float:
+    """Media de los aciertos de cada clase presente."""
+    layers = _unflatten(weights)
+    hits: dict[int, int] = {}
+    totals: dict[int, int] = {}
+    for inputs, label in samples:
+        logits = _forward(layers, inputs)[-1]
+        totals[label] = totals.get(label, 0) + 1
+        hits[label] = hits.get(label, 0) + (logits.index(max(logits)) == label)
+    return sum(hits[label] / totals[label] for label in totals) / len(totals)
+
+
 def _dataset_path(parameters: dict) -> Path:
-    manifest = parameters.get("nodum.datasets") or []
+    model_file = parameters.get("model_file")
+    entries = parameters.get("nodum.datasets") or []
+    manifest = [entry for entry in entries if Path(str(entry.get("path"))).name != model_file]
     if manifest and manifest[0].get("path"):
         return Path(manifest[0]["path"])
-    found = sorted(path for path in INPUTS_DIR.glob("*/*") if path.is_file())
+    found = sorted(path for path in INPUTS_DIR.glob("*/*") if path.is_file() and path.name != model_file)
     if not found:
         raise FileNotFoundError("no hay dataset de entrada")
     return found[0]
+
+
+def _encoded_model(parameters: dict) -> str:
+    model_file = parameters.get("model_file")
+    if not model_file:
+        return str(parameters["model"])
+    found = [path for path in INPUTS_DIR.glob("*/*") if path.is_file() and path.name == Path(str(model_file)).name]
+    if not found:
+        raise FileNotFoundError("no ha llegado el fichero del modelo")
+    return found[0].read_text(encoding="ascii").strip()
+
+
+def _write_update(update: dict) -> None:
+    OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+    (OUTPUTS_DIR / "update.json").write_text(json.dumps(update), encoding="utf-8")
 
 
 def run() -> None:
     parameters = json.loads((INPUTS_DIR / "algoCustomData.json").read_text(encoding="utf-8"))
     given = parameters.get("schema")
     configure(json.loads(given) if given else None)
-    encoded = str(parameters["model"])
+    encoded = _encoded_model(parameters)
     samples = read_samples(_dataset_path(parameters))
     weights = decode_weights(encoded)
+    model_sha256 = hashlib.sha256(encoded.encode("ascii")).hexdigest()
+    if parameters.get("mode") == "evaluate":
+        _write_update({"version": VERSION, "mode": "evaluate", "n_eval": len(samples), "model_in_sha256": model_sha256,
+                       **evaluate(weights, samples), "balanced_accuracy": balanced_accuracy(weights, samples)})
+        print(f"n_eval={len(samples)}")
+        return
     started = time.monotonic()
     trained = train(
         weights, samples, int(parameters["epochs"]), float(parameters["lr"]),
@@ -220,14 +258,13 @@ def run() -> None:
     update = {
         "version": VERSION,
         "n_train": len(samples),
-        "model_in_sha256": hashlib.sha256(encoded.encode("ascii")).hexdigest(),
+        "model_in_sha256": model_sha256,
         "model": encode_weights(trained),
         "before": evaluate(weights, samples),
         "after": evaluate(trained, samples),
         "train_seconds": round(seconds, 3),
     }
-    OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
-    (OUTPUTS_DIR / "update.json").write_text(json.dumps(update), encoding="utf-8")
+    _write_update(update)
     print(f"n_train={update['n_train']} train_seconds={update['train_seconds']}")
 
 
