@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Un paso de FedAvg: entrena una MLP pequeña con el modelo recibido y devuelve sus pesos.
+# Un paso de FedAvg: entrena la MLP recibida y devuelve sus weights.
 #
-# El mismo script sirve de silo y de brazo centralizado: solo cambian el dataset y las épocas.
-# SGD sin estado: entre dos trabajos no se pierde nada, como pasaría con Adam.
+# MLP (multilayer perceptron): capas densas con ReLU entre ellas. Aquí 2-32-32-2: entran x1 y x2,
+# salen los logits de las dos clases; 1 218 weights en total (ver LAYER_SIZES).
+# Sirve para silo y centralizado: solo cambian el dataset y los epochs.
+# SGD porque no tiene estado: Adam perdería sus momentos entre dos trabajos.
 #
 # Entradas (ocean-node 4.5): el CSV `x1,x2,label` en /data/inputs/<i>/ y los parámetros en
 # /data/inputs/algoCustomData.json. Salida: /data/outputs/update.json.
@@ -103,7 +105,7 @@ def _add_gradient(layers: list[Layer], gradients: list[Layer], sample: Sample) -
                 grad_row[column] += signal * value
             grad_biases[row] += signal
         if index > 0:
-            # La ReLU de la capa de abajo solo deja pasar el error de sus neuronas activas.
+            # Backprop: la ReLU de abajo solo propaga a sus neuronas activas.
             error = [
                 sum(signal * matrix[row][column] for row, signal in enumerate(error)) if below[column] > 0 else 0.0
                 for column in range(len(below))
@@ -113,7 +115,7 @@ def _add_gradient(layers: list[Layer], gradients: list[Layer], sample: Sample) -
 def train(
     weights: list[float], samples: list[Sample], epochs: int, lr: float, batch_size: int, seed: int
 ) -> list[float]:
-    """SGD por minilotes con cross-entropy."""
+    """SGD por batches con cross-entropy."""
     layers = _unflatten(weights)
     rng = random.Random(seed)
     order = list(samples)

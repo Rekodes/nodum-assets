@@ -61,7 +61,7 @@ Una ficha por asset, en el orden del formulario de **Publicar**. Lo que va en `c
 | | De dónde sale | Un fichero de GitHub |
 | | Fichero de GitHub | `github.com/Rekodes/nodum-assets/blob/main/algorithms/federated/fedavg_mlp.py` |
 | Datos | Nombre | `FedAvg · MLP` |
-| | Descripción | Un paso de FedAvg (Federated Averaging): entrena una MLP (Multilayer Perceptron, una red neuronal pequeña) con SGD (Stochastic Gradient Descent: ajusta los pesos poco a poco, un lote de filas cada vez) a partir del modelo recibido y devuelve sus pesos en update.json, sin ninguna fila. |
+| | Descripción | Un paso de FedAvg (Federated Averaging): entrena una MLP (Multilayer Perceptron, una red neuronal pequeña) con SGD (Stochastic Gradient Descent: ajusta los weights poco a poco, un batch de filas cada vez) a partir del modelo recibido y devuelve sus weights en update.json, sin ninguna fila. |
 | | Etiquetas | `federated, fedavg, mlp, csv` |
 | Nodos | Dónde podrá ejecutarse | Nodo 1, Nodo 2 y Nodo 3 |
 | | Necesita internet al ejecutarse | No |
@@ -160,6 +160,6 @@ Lo publica otra cuenta, no la del operador: así se puede comprar su acceso desd
 | | URL del fichero | `https://raw.githubusercontent.com/Rekodes/nodum-assets/main/datasets/federated/sinteticos/lunas-federadas/v1/total.csv` |
 | | Cabeceras de la petición | Ninguna |
 | Datos | Nombre | `Lunas federadas · total` |
-| | Descripción | Dos clases en forma de luna, sintéticas. 2400 filas, exactamente las de los tres silos, para el brazo centralizado. |
+| | Descripción | Dos clases en forma de luna, sintéticas. 2400 filas, exactamente las de los tres silos, para el centralizado. |
 | | Etiquetas | `federated, moons, synthetic, csv` |
 | Confianza | Algoritmos | `FedAvg · MLP` |
