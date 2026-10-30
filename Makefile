@@ -25,12 +25,16 @@ data: ## Regenera los datasets y comprueba que no cambian
 lint: ## Ruff, mypy estricto sobre los algoritmos con imagen y mypy sobre los scripts
 	uvx ruff check --line-length 120 --select E,F,I,B,UP,SIM,N shared algorithms datasets/*/generadores scripts
 	MYPYPATH=shared uvx mypy --strict --python-version 3.12 shared/*.py $(addsuffix .py,$(ALGORITHMS)) scripts/*.py
-	uvx mypy --python-version 3.12 $(SCRIPTS)
+	uvx mypy --python-version 3.12 --ignore-missing-imports $(SCRIPTS)
 
 build: ## Construye las imágenes (linux/amd64)
 	@for a in $(ALGORITHMS); do n=$$(basename $$a); \
 	  docker buildx build --platform $(PLATFORM) -f shared/Dockerfile --build-arg ALGORITHM=$$a \
 	    -t $(REGISTRY)/nodum-$${n//_/-}:$(VERSION) --load . || exit 1; done
+
+build-torch: ## Construye la imagen de FedAvg con PyTorch (linux/amd64)
+	docker buildx build --platform $(PLATFORM) -f algorithms/federated/fedavg_torch.Dockerfile \
+	  -t $(REGISTRY)/nodum-fedavg-torch:$(VERSION) --load .
 
 # Como el nodo: sin red, 1000:1000, sin capacidades y las entradas de solo lectura.
 run: ## Ejecuta una imagen: make run a=line_count in="datasets/agro/sinteticos/…" [params='{…}']
@@ -44,4 +48,4 @@ run: ## Ejecuta una imagen: make run a=line_count in="datasets/agro/sinteticos/�
 push: ## Sube a tu Docker Hub un algoritmo, una carpeta o todos: make push a=line_count|generic|all [ns=…]
 	@python3 scripts/push_images.py $(a) --version $(VERSION) $(if $(ns),--namespace $(ns)) $(if $(force),--force)
 
-.PHONY: help data lint build run push
+.PHONY: help data lint build build-torch run push
