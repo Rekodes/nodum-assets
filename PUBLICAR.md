@@ -62,7 +62,7 @@ Una ficha por asset, en el orden del formulario de **Publicar**. Lo que va en `c
 | | Fichero de GitHub | `github.com/Rekodes/nodum-assets/blob/main/algorithms/federated/fedavg_mlp.py` |
 | Datos | Nombre | `FedAvg · MLP` |
 | | Descripción | Un paso de FedAvg (Federated Averaging): entrena una MLP (Multilayer Perceptron, una red neuronal pequeña) con SGD (Stochastic Gradient Descent: ajusta los pesos poco a poco, un lote de filas cada vez) a partir del modelo recibido y devuelve sus pesos en update.json, sin ninguna fila. |
-| | Etiquetas | `federado, fedavg, mlp, csv` |
+| | Etiquetas | `federated, fedavg, mlp, csv` |
 | Nodos | Dónde podrá ejecutarse | Nodo 1, Nodo 2 y Nodo 3 |
 | | Necesita internet al ejecutarse | No |
 | | Formatos que lee | CSV |
@@ -122,7 +122,7 @@ Lo publica otra cuenta, no la del operador: así se puede comprar su acceso desd
 | | Cabeceras de la petición | Ninguna |
 | Datos | Nombre | `Lunas federadas · silo A` |
 | | Descripción | Dos clases en forma de luna, sintéticas. 800 filas con la clase 0 en el 80 %. |
-| | Etiquetas | `federado, lunas, sintetico, csv` |
+| | Etiquetas | `federated, moons, synthetic, csv` |
 | Confianza | Algoritmos | `FedAvg · MLP` |
 
 ### Lunas federadas · silo B
@@ -135,7 +135,7 @@ Lo publica otra cuenta, no la del operador: así se puede comprar su acceso desd
 | | Cabeceras de la petición | Ninguna |
 | Datos | Nombre | `Lunas federadas · silo B` |
 | | Descripción | Dos clases en forma de luna, sintéticas. 800 filas con la clase 0 en el 50 %. |
-| | Etiquetas | `federado, lunas, sintetico, csv` |
+| | Etiquetas | `federated, moons, synthetic, csv` |
 | Confianza | Algoritmos | `FedAvg · MLP` |
 
 ### Lunas federadas · silo C
@@ -148,7 +148,7 @@ Lo publica otra cuenta, no la del operador: así se puede comprar su acceso desd
 | | Cabeceras de la petición | Ninguna |
 | Datos | Nombre | `Lunas federadas · silo C` |
 | | Descripción | Dos clases en forma de luna, sintéticas. 800 filas con la clase 0 en el 20 %. |
-| | Etiquetas | `federado, lunas, sintetico, csv` |
+| | Etiquetas | `federated, moons, synthetic, csv` |
 | Confianza | Algoritmos | `FedAvg · MLP` |
 
 ### Lunas federadas · total
@@ -161,5 +161,5 @@ Lo publica otra cuenta, no la del operador: así se puede comprar su acceso desd
 | | Cabeceras de la petición | Ninguna |
 | Datos | Nombre | `Lunas federadas · total` |
 | | Descripción | Dos clases en forma de luna, sintéticas. 2400 filas, exactamente las de los tres silos, para el brazo centralizado. |
-| | Etiquetas | `federado, lunas, sintetico, csv` |
+| | Etiquetas | `federated, moons, synthetic, csv` |
 | Confianza | Algoritmos | `FedAvg · MLP` |
