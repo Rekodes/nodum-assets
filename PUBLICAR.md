@@ -51,6 +51,24 @@ Una ficha por asset, en el orden del formulario de **Publicar**. Lo que va en `c
 |---|---|---|---|---|---|
 | `skip_header` | Saltar la cabecera | Sí o no | `No` | No cuenta la primera línea de cada fichero. | No |
 
+### FedAvg · MLP
+
+| Paso | Campo | Valor |
+|---|---|---|
+| Tipo | Qué publicas | Un algoritmo |
+| | Tipo de algoritmo | Un script |
+| Origen | Entorno | Python 3.15 |
+| | De dónde sale | Un fichero de GitHub |
+| | Fichero de GitHub | `github.com/Rekodes/nodum-assets/blob/main/algorithms/federated/fedavg_mlp.py` |
+| Datos | Nombre | `FedAvg · MLP` |
+| | Descripción | Un paso de FedAvg: entrena una MLP pequeña con SGD a partir del modelo recibido y devuelve sus pesos en update.json, sin ninguna fila. |
+| | Etiquetas | `federado, fedavg, mlp, csv` |
+| Nodos | Dónde podrá ejecutarse | Nodo 1, Nodo 2 y Nodo 3 |
+| | Necesita internet al ejecutarse | No |
+| | Formatos que lee | CSV |
+| | Genérico | No |
+| Parámetros | | Los de [su tabla](algorithms/federated/README.md), todos obligatorios |
+
 ## Datasets
 
 ### Maíz · estrés hídrico en tres fincas
@@ -93,3 +111,55 @@ Lo publica otra cuenta, no la del operador: así se puede comprar su acceso desd
 | | Descripción | 2000 pacientes adultos sintéticos con edad, IMC, cintura, tensión, glucosa, HbA1c, perfil lipídico y hábitos, y si tienen diabetes tipo 2 (14 %). Prevalencia y umbrales de diagnóstico como en las cifras públicas (di@bet.es, ADA); nadie existe. Con huecos en cintura y lípidos, como una historia real. |
 | | Etiquetas | `salud, diabetes, atencion-primaria, sintetico, csv` |
 | Confianza | Algoritmos | Los dos genéricos (salen ya elegidos) |
+
+### Lunas federadas · silo A
+
+| Paso | Campo | Valor |
+|---|---|---|
+| Tipo | Qué publicas | Un dataset |
+| Origen | Nodo | Nodo 1 |
+| | URL del fichero | `https://raw.githubusercontent.com/Rekodes/nodum-assets/main/datasets/federated/sinteticos/lunas-federadas/v1/silo-a.csv` |
+| | Cabeceras de la petición | Ninguna |
+| Datos | Nombre | `Lunas federadas · silo A` |
+| | Descripción | Dos clases en forma de luna, sintéticas. 800 filas con la clase 0 en el 80 %. |
+| | Etiquetas | `federado, lunas, sintetico, csv` |
+| Confianza | Algoritmos | `FedAvg · MLP` |
+
+### Lunas federadas · silo B
+
+| Paso | Campo | Valor |
+|---|---|---|
+| Tipo | Qué publicas | Un dataset |
+| Origen | Nodo | Nodo 2 |
+| | URL del fichero | `https://raw.githubusercontent.com/Rekodes/nodum-assets/main/datasets/federated/sinteticos/lunas-federadas/v1/silo-b.csv` |
+| | Cabeceras de la petición | Ninguna |
+| Datos | Nombre | `Lunas federadas · silo B` |
+| | Descripción | Dos clases en forma de luna, sintéticas. 800 filas con la clase 0 en el 50 %. |
+| | Etiquetas | `federado, lunas, sintetico, csv` |
+| Confianza | Algoritmos | `FedAvg · MLP` |
+
+### Lunas federadas · silo C
+
+| Paso | Campo | Valor |
+|---|---|---|
+| Tipo | Qué publicas | Un dataset |
+| Origen | Nodo | Nodo 3 |
+| | URL del fichero | `https://raw.githubusercontent.com/Rekodes/nodum-assets/main/datasets/federated/sinteticos/lunas-federadas/v1/silo-c.csv` |
+| | Cabeceras de la petición | Ninguna |
+| Datos | Nombre | `Lunas federadas · silo C` |
+| | Descripción | Dos clases en forma de luna, sintéticas. 800 filas con la clase 0 en el 20 %. |
+| | Etiquetas | `federado, lunas, sintetico, csv` |
+| Confianza | Algoritmos | `FedAvg · MLP` |
+
+### Lunas federadas · total
+
+| Paso | Campo | Valor |
+|---|---|---|
+| Tipo | Qué publicas | Un dataset |
+| Origen | Nodo | Nodo 1 |
+| | URL del fichero | `https://raw.githubusercontent.com/Rekodes/nodum-assets/main/datasets/federated/sinteticos/lunas-federadas/v1/total.csv` |
+| | Cabeceras de la petición | Ninguna |
+| Datos | Nombre | `Lunas federadas · total` |
+| | Descripción | Dos clases en forma de luna, sintéticas. 2400 filas, exactamente las de los tres silos, para el brazo centralizado. |
+| | Etiquetas | `federado, lunas, sintetico, csv` |
+| Confianza | Algoritmos | `FedAvg · MLP` |
