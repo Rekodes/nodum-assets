@@ -61,7 +61,7 @@ Una ficha por asset, en el orden del formulario de **Publicar**. Lo que va en `c
 | | De dónde sale | Un fichero de GitHub |
 | | Fichero de GitHub | `github.com/Rekodes/nodum-assets/blob/main/algorithms/federated/fedavg_mlp.py` |
 | Datos | Nombre | `FedAvg · MLP` |
-| | Descripción | Un paso de FedAvg: entrena una MLP pequeña con SGD a partir del modelo recibido y devuelve sus pesos en update.json, sin ninguna fila. |
+| | Descripción | Un paso de FedAvg (Federated Averaging): entrena una MLP (Multilayer Perceptron, una red neuronal pequeña) con SGD (Stochastic Gradient Descent: ajusta los pesos poco a poco, un lote de filas cada vez) a partir del modelo recibido y devuelve sus pesos en update.json, sin ninguna fila. |
 | | Etiquetas | `federado, fedavg, mlp, csv` |
 | Nodos | Dónde podrá ejecutarse | Nodo 1, Nodo 2 y Nodo 3 |
 | | Necesita internet al ejecutarse | No |
