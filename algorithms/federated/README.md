@@ -4,15 +4,15 @@ Cada sitio corre el algoritmo sobre sus datos y quien orquesta agrega lo que dev
 
 | Algoritmo | Forma | Qué hace | Formatos | Salidas |
 |---|---|---|---|---|
-| [FedAvg · MLP](fedavg_mlp.py) | Script, entorno `python-3.15` | Entrena una MLP 2-32-32-2 (1 218 pesos) con SGD a partir del modelo recibido y devuelve sus pesos | CSV `x1,x2,label` | `update.json` |
+| [FedAvg · MLP](fedavg_mlp.py) | Script, entorno `python-3.15` | Entrena una MLP 2-32-32-2 (1 218 weights) con SGD a partir del modelo recibido y devuelve sus weights | CSV `x1,x2,label` | `update.json` |
 
 | Parámetro | Tipo | Obligatorio | Qué hace |
 |---|---|---|---|
-| `model` | text | Sí | Los pesos de entrada: float32 en little-endian y base64 (6 496 caracteres) |
-| `epochs` | number | Sí | Épocas locales |
+| `model` | text | Sí | Los weights de entrada: float32 en little-endian y base64 (6 496 caracteres) |
+| `epochs` | number | Sí | Local epochs |
 | `lr` | number | Sí | Tasa de aprendizaje |
-| `batch_size` | number | Sí | Filas por minilote |
-| `seed` | number | Sí | Semilla del barajado |
+| `batch_size` | number | Sí | Filas por batch |
+| `seed` | number | Sí | Seed del barajado |
 
-`update.json` lleva los pesos entrenados, `n_train`, la huella del modelo recibido y la pérdida y la exactitud
+`update.json` lleva los weights entrenados, `n_train`, la huella del modelo recibido y la loss y la accuracy
 sobre el propio silo antes y después de entrenar. Nunca lleva filas.
