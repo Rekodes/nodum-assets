@@ -4,7 +4,7 @@ Cada sitio corre el algoritmo sobre sus datos y quien orquesta agrega lo que dev
 
 | Algoritmo | Forma | Qué hace | Formatos | Salidas |
 |---|---|---|---|---|
-| [FedAvg · PyTorch](fedavg_torch.py) | Imagen `nodum-fedavg-torch` (`make build-torch`) | Lo mismo que FedAvg · MLP, con PyTorch sobre CPU: mismos parámetros, salida y formato de weights | CSV | `update.json` |
+| [FedAvg · MLP (PyTorch)](fedavg_torch.py) | Imagen `nodum-fedavg-torch` (`make build-torch VERSION=0.3.0`) | Lo mismo que FedAvg · MLP, con PyTorch sobre CPU: mismos parámetros, salida y formato de weights | CSV | `update.json` |
 | [FedAvg · MLP](fedavg_mlp.py) | Script, entorno `python-3.15` | Entrena una MLP con SGD a partir del modelo recibido y devuelve sus weights. Sin `schema`, 2-32-32-2 (1 218 weights) | CSV | `update.json` |
 
 | Parámetro | Tipo | Obligatorio | Qué hace |
