@@ -69,6 +69,26 @@ Una ficha por asset, en el orden del formulario de **Publicar**. Lo que va en `c
 | | Genérico | No |
 | Parámetros | | Los de [su tabla](algorithms/federated/README.md) |
 
+### FedAvg · MLP (PyTorch)
+
+Lo mismo que FedAvg · MLP, entrenado con PyTorch sobre CPU. La imagen se construye sin emular y se sube a mano:
+`make build-torch VERSION=0.3.0` y `docker push rekodes/nodum-fedavg-torch:0.3.0`.
+
+| Paso | Campo | Valor |
+|---|---|---|
+| Tipo | Qué publicas | Un algoritmo |
+| | Tipo de algoritmo | Solo una imagen |
+| Origen | Imagen con etiqueta | `docker.io/rekodes/nodum-fedavg-torch:0.3.0` |
+| | Entrypoint | `python /app/fedavg_torch.py` |
+| Datos | Nombre | `FedAvg · MLP (PyTorch)` |
+| | Descripción | Lo mismo que FedAvg · MLP, entrenado con PyTorch sobre CPU: mismos parámetros, salida y formato de weights, y prácticamente el mismo modelo. Un paso de FedAvg: entrena una MLP con SGD a partir del modelo recibido y devuelve sus weights en update.json, sin ninguna fila. Con mode=evaluate no entrena y solo devuelve métricas agregadas. |
+| | Etiquetas | `federated, fedavg, mlp, csv, pytorch` |
+| Nodos | Dónde podrá ejecutarse | Nodo 1, Nodo 2 y Nodo 3 |
+| | Necesita internet al ejecutarse | No |
+| | Formatos que lee | CSV |
+| | Genérico | No |
+| Parámetros | | Los de [su tabla](algorithms/federated/README.md) |
+
 ## Datasets
 
 ### Maíz · estrés hídrico en tres fincas
