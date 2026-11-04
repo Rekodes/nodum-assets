@@ -51,7 +51,7 @@ Una ficha por asset, en el orden del formulario de **Publicar**. Lo que va en `c
 |---|---|---|---|---|---|
 | `skip_header` | Saltar la cabecera | Sí o no | `No` | No cuenta la primera línea de cada fichero. | No |
 
-### FedAvg · MLP
+### FedAvg · MLP (script, modelo por parámetro)
 
 | Paso | Campo | Valor |
 |---|---|---|
@@ -60,8 +60,8 @@ Una ficha por asset, en el orden del formulario de **Publicar**. Lo que va en `c
 | Origen | Entorno | Python 3.15 |
 | | De dónde sale | Un fichero de GitHub |
 | | Fichero de GitHub | `github.com/Rekodes/nodum-assets/blob/main/algorithms/federated/fedavg_mlp.py` |
-| Datos | Nombre | `FedAvg · MLP` |
-| | Descripción | Un paso de FedAvg (Federated Averaging): entrena una MLP (Multilayer Perceptron, una red neuronal pequeña) con SGD (Stochastic Gradient Descent: ajusta los weights poco a poco, un batch de filas cada vez) a partir del modelo recibido y devuelve sus weights en update.json, sin ninguna fila. |
+| Datos | Nombre | `FedAvg · MLP (script, modelo por parámetro)` |
+| | Descripción | Un paso de FedAvg con la imagen genérica de Python y este script: recibe el modelo en el parámetro model (weights en base64, hasta lo que admite el nodo, 4 MiB), entrena una MLP con SGD y devuelve sus weights en update.json, sin ninguna fila. Con schema admite cualquier CSV: numéricas, categóricas y vacíos. Con mode=evaluate solo devuelve métricas agregadas. |
 | | Etiquetas | `federated, fedavg, mlp, csv` |
 | Nodos | Dónde podrá ejecutarse | Nodo 1, Nodo 2 y Nodo 3 |
 | | Necesita internet al ejecutarse | No |
@@ -69,9 +69,9 @@ Una ficha por asset, en el orden del formulario de **Publicar**. Lo que va en `c
 | | Genérico | No |
 | Parámetros | | Los de [su tabla](algorithms/federated/README.md) |
 
-### FedAvg · MLP (PyTorch)
+### FedAvg · MLP (imagen, modelo como asset)
 
-Lo mismo que FedAvg · MLP, entrenado con PyTorch sobre CPU. La imagen se construye sin emular y se sube a mano:
+Lo mismo que «FedAvg · MLP (script, modelo por parámetro)», entrenado con PyTorch sobre CPU y pensado para recibir el modelo como asset. La imagen se construye sin emular y se sube a mano:
 `make build-torch VERSION=0.3.0` y `docker push rekodes/nodum-fedavg-torch:0.3.0`.
 
 | Paso | Campo | Valor |
@@ -80,8 +80,8 @@ Lo mismo que FedAvg · MLP, entrenado con PyTorch sobre CPU. La imagen se constr
 | | Tipo de algoritmo | Solo una imagen |
 | Origen | Imagen con etiqueta | `docker.io/rekodes/nodum-fedavg-torch:0.3.0` |
 | | Entrypoint | `python /app/fedavg_torch.py` |
-| Datos | Nombre | `FedAvg · MLP (PyTorch)` |
-| | Descripción | Lo mismo que FedAvg · MLP, entrenado con PyTorch sobre CPU: mismos parámetros, salida y formato de weights, y prácticamente el mismo modelo. Un paso de FedAvg: entrena una MLP con SGD a partir del modelo recibido y devuelve sus weights en update.json, sin ninguna fila. Con mode=evaluate no entrena y solo devuelve métricas agregadas. |
+| Datos | Nombre | `FedAvg · MLP (imagen, modelo como asset)` |
+| | Descripción | Un paso de FedAvg en una imagen propia con PyTorch (rekodes/nodum-fedavg-torch, fijada por digest): recibe el modelo como un dataset más del trabajo (model_file), entrena una MLP con SGD sobre CPU y devuelve sus weights en update.json, sin ninguna fila. También admite el modelo en el parámetro model. Con mode=evaluate solo devuelve métricas agregadas. |
 | | Etiquetas | `federated, fedavg, mlp, csv, pytorch` |
 | Nodos | Dónde podrá ejecutarse | Nodo 1, Nodo 2 y Nodo 3 |
 | | Necesita internet al ejecutarse | No |
@@ -143,7 +143,7 @@ Lo publica otra cuenta, no la del operador: así se puede comprar su acceso desd
 | Datos | Nombre | `Lunas federadas · silo A` |
 | | Descripción | Dos clases en forma de luna, sintéticas. 800 filas con la clase 0 en el 80 %. |
 | | Etiquetas | `federated, moons, synthetic, csv` |
-| Confianza | Algoritmos | `FedAvg · MLP` |
+| Confianza | Algoritmos | `FedAvg · MLP (script, modelo por parámetro)` |
 
 ### Lunas federadas · silo B
 
@@ -156,7 +156,7 @@ Lo publica otra cuenta, no la del operador: así se puede comprar su acceso desd
 | Datos | Nombre | `Lunas federadas · silo B` |
 | | Descripción | Dos clases en forma de luna, sintéticas. 800 filas con la clase 0 en el 50 %. |
 | | Etiquetas | `federated, moons, synthetic, csv` |
-| Confianza | Algoritmos | `FedAvg · MLP` |
+| Confianza | Algoritmos | `FedAvg · MLP (script, modelo por parámetro)` |
 
 ### Lunas federadas · silo C
 
@@ -169,7 +169,7 @@ Lo publica otra cuenta, no la del operador: así se puede comprar su acceso desd
 | Datos | Nombre | `Lunas federadas · silo C` |
 | | Descripción | Dos clases en forma de luna, sintéticas. 800 filas con la clase 0 en el 20 %. |
 | | Etiquetas | `federated, moons, synthetic, csv` |
-| Confianza | Algoritmos | `FedAvg · MLP` |
+| Confianza | Algoritmos | `FedAvg · MLP (script, modelo por parámetro)` |
 
 ### Lunas federadas · total
 
@@ -182,4 +182,4 @@ Lo publica otra cuenta, no la del operador: así se puede comprar su acceso desd
 | Datos | Nombre | `Lunas federadas · total` |
 | | Descripción | Dos clases en forma de luna, sintéticas. 2400 filas, exactamente las de los tres silos, para el centralizado. |
 | | Etiquetas | `federated, moons, synthetic, csv` |
-| Confianza | Algoritmos | `FedAvg · MLP` |
+| Confianza | Algoritmos | `FedAvg · MLP (script, modelo por parámetro)` |
