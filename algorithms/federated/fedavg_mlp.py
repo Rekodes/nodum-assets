@@ -5,6 +5,8 @@
 # logits de las dos clases; 1 218 weights en total (ver LAYER_SIZES).
 # Sirve para silo y centralizado: solo cambian el dataset y los epochs.
 # SGD porque no tiene estado: Adam perdería sus momentos entre dos trabajos.
+# Cada lote de entrenamiento pasa por cuatro fases, una función cada una (ver `train`): 1 · predecir (_forward),
+# 2 · medir (_output_error), 3 · culpar (_backward) y 4 · corregir (_update).
 #
 # Entradas (ocean-node 4.5): el CSV en /data/inputs/<i>/ y los parámetros en /data/inputs/algoCustomData.json.
 # Salida: /data/outputs/update.json.
@@ -31,7 +33,7 @@ import sys
 import time
 from pathlib import Path
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 INPUTS_DIR = Path(os.environ.get("FEDAVG_INPUTS_DIR", "/data/inputs"))
 OUTPUTS_DIR = Path(os.environ.get("FEDAVG_OUTPUTS_DIR", "/data/outputs"))
 DEFAULT_SCHEMA: dict = {
@@ -49,6 +51,9 @@ type Sample = tuple[list[float], int]
 type Layer = tuple[list[list[float]], list[float]]
 
 
+# --- Configuración: el esquema fija las columnas y la forma de la red -------------------------------------------------
+
+
 def configure(new_schema: dict | None = None) -> None:
     """Fija el esquema y, con él, la arquitectura. Sin esquema, el de `DEFAULT_SCHEMA`."""
     global schema, LAYER_SIZES, N_WEIGHTS
@@ -60,118 +65,7 @@ def configure(new_schema: dict | None = None) -> None:
     N_WEIGHTS = sum((n_in + 1) * n_out for n_in, n_out in zip(LAYER_SIZES, LAYER_SIZES[1:], strict=False))
 
 
-def init_weights(seed: int) -> list[float]:
-    """Uniforme en ±1/√entradas, por capa, como las capas lineales de PyTorch."""
-    rng = random.Random(seed)
-    weights: list[float] = []
-    for n_in, n_out in zip(LAYER_SIZES, LAYER_SIZES[1:], strict=False):
-        bound = 1 / math.sqrt(n_in)
-        weights += [rng.uniform(-bound, bound) for _ in range((n_in + 1) * n_out)]
-    return weights
-
-
-def encode_weights(weights: list[float]) -> str:
-    return base64.b64encode(struct.pack(f"<{len(weights)}f", *weights)).decode("ascii")
-
-
-def decode_weights(encoded: str) -> list[float]:
-    raw = base64.b64decode(encoded, validate=True)
-    if len(raw) != N_WEIGHTS * 4:
-        raise ValueError(f"el modelo tiene {len(raw)} bytes y se esperaban {N_WEIGHTS * 4}")
-    return list(struct.unpack(f"<{N_WEIGHTS}f", raw))
-
-
-def _unflatten(weights: list[float]) -> list[Layer]:
-    layers: list[Layer] = []
-    position = 0
-    for n_in, n_out in zip(LAYER_SIZES, LAYER_SIZES[1:], strict=False):
-        matrix = [weights[position + row * n_in : position + (row + 1) * n_in] for row in range(n_out)]
-        position += n_in * n_out
-        layers.append((matrix, weights[position : position + n_out]))
-        position += n_out
-    return layers
-
-
-def _flatten(layers: list[Layer]) -> list[float]:
-    weights: list[float] = []
-    for matrix, biases in layers:
-        for row in matrix:
-            weights += row
-        weights += biases
-    return weights
-
-
-def _forward(layers: list[Layer], inputs: list[float]) -> list[list[float]]:
-    """Las activaciones de cada capa; la última son los logits."""
-    activations = [inputs]
-    for index, (matrix, biases) in enumerate(layers):
-        current = activations[-1]
-        out = [sum(w * a for w, a in zip(row, current, strict=True)) + b for row, b in zip(matrix, biases, strict=True)]
-        activations.append(out if index == len(layers) - 1 else [max(0.0, value) for value in out])
-    return activations
-
-
-def _probabilities(logits: list[float]) -> list[float]:
-    top = max(logits)
-    exps = [math.exp(value - top) for value in logits]
-    total = sum(exps)
-    return [value / total for value in exps]
-
-
-def _add_gradient(layers: list[Layer], gradients: list[Layer], sample: Sample) -> None:
-    inputs, label = sample
-    activations = _forward(layers, inputs)
-    probabilities = _probabilities(activations[-1])
-    error = [p - (1.0 if index == label else 0.0) for index, p in enumerate(probabilities)]
-    for index in range(len(layers) - 1, -1, -1):
-        matrix, _ = layers[index]
-        grad_matrix, grad_biases = gradients[index]
-        below = activations[index]
-        for row, signal in enumerate(error):
-            grad_row = grad_matrix[row]
-            for column, value in enumerate(below):
-                grad_row[column] += signal * value
-            grad_biases[row] += signal
-        if index > 0:
-            # Backprop: la ReLU de abajo solo propaga a sus neuronas activas.
-            error = [
-                sum(signal * matrix[row][column] for row, signal in enumerate(error)) if below[column] > 0 else 0.0
-                for column in range(len(below))
-            ]
-
-
-def train(
-    weights: list[float], samples: list[Sample], epochs: int, lr: float, batch_size: int, seed: int
-) -> list[float]:
-    """SGD por batches con cross-entropy."""
-    layers = _unflatten(weights)
-    rng = random.Random(seed)
-    order = list(samples)
-    for _ in range(epochs):
-        rng.shuffle(order)
-        for start in range(0, len(order), batch_size):
-            batch = order[start : start + batch_size]
-            gradients = _unflatten([0.0] * len(weights))
-            for sample in batch:
-                _add_gradient(layers, gradients, sample)
-            step = lr / len(batch)
-            for (matrix, biases), (grad_matrix, grad_biases) in zip(layers, gradients, strict=True):
-                for row, grad_row in zip(matrix, grad_matrix, strict=True):
-                    for column, value in enumerate(grad_row):
-                        row[column] -= step * value
-                for row_index, value in enumerate(grad_biases):
-                    biases[row_index] -= step * value
-    return _flatten(layers)
-
-
-def evaluate(weights: list[float], samples: list[Sample]) -> dict[str, float]:
-    layers = _unflatten(weights)
-    loss, hits = 0.0, 0
-    for inputs, label in samples:
-        logits = _forward(layers, inputs)[-1]
-        loss -= math.log(max(_probabilities(logits)[label], 1e-12))
-        hits += logits.index(max(logits)) == label
-    return {"loss": loss / len(samples), "accuracy": hits / len(samples)}
+# --- Los datos: de fila a números -------------------------------------------------------------------------------------
 
 
 def _scaled(text: str, mean: float, spread: float) -> float:
@@ -197,6 +91,144 @@ def read_samples(path: Path) -> list[Sample]:
                 if row[schema["target"]] in classes]
 
 
+# --- Los pesos: crearlos, aplanarlos y transportarlos -----------------------------------------------------------------
+
+
+def init_weights(seed: int) -> list[float]:
+    """Uniforme en ±1/√entradas, por capa, como las capas lineales de PyTorch."""
+    rng = random.Random(seed)
+    weights: list[float] = []
+    for n_in, n_out in zip(LAYER_SIZES, LAYER_SIZES[1:], strict=False):
+        bound = 1 / math.sqrt(n_in)
+        weights += [rng.uniform(-bound, bound) for _ in range((n_in + 1) * n_out)]
+    return weights
+
+
+def _unflatten(weights: list[float]) -> list[Layer]:
+    layers: list[Layer] = []
+    position = 0
+    for n_in, n_out in zip(LAYER_SIZES, LAYER_SIZES[1:], strict=False):
+        matrix = [weights[position + row * n_in : position + (row + 1) * n_in] for row in range(n_out)]
+        position += n_in * n_out
+        layers.append((matrix, weights[position : position + n_out]))
+        position += n_out
+    return layers
+
+
+def _flatten(layers: list[Layer]) -> list[float]:
+    weights: list[float] = []
+    for matrix, biases in layers:
+        for row in matrix:
+            weights += row
+        weights += biases
+    return weights
+
+
+def encode_weights(weights: list[float]) -> str:
+    return base64.b64encode(struct.pack(f"<{len(weights)}f", *weights)).decode("ascii")
+
+
+def decode_weights(encoded: str) -> list[float]:
+    raw = base64.b64decode(encoded, validate=True)
+    if len(raw) != N_WEIGHTS * 4:
+        raise ValueError(f"el modelo tiene {len(raw)} bytes y se esperaban {N_WEIGHTS * 4}")
+    return list(struct.unpack(f"<{N_WEIGHTS}f", raw))
+
+
+# --- El entrenamiento: 1 · predecir, 2 · medir, 3 · culpar, 4 · corregir ----------------------------------------------
+
+
+def _forward(layers: list[Layer], inputs: list[float]) -> list[list[float]]:
+    """1 · PREDECIR (forward): las activaciones de cada capa. Cada neurona hace pesos × entrada + sesgo, con ReLU
+    salvo en la última capa, que da los logits."""
+    activations = [inputs]
+    for index, (matrix, biases) in enumerate(layers):
+        current = activations[-1]
+        out = [sum(w * a for w, a in zip(row, current, strict=True)) + b for row, b in zip(matrix, biases, strict=True)]
+        activations.append(out if index == len(layers) - 1 else [max(0.0, value) for value in out])
+    return activations
+
+
+def _probabilities(logits: list[float]) -> list[float]:
+    """Softmax: de los logits a una probabilidad por clase."""
+    top = max(logits)
+    exps = [math.exp(value - top) for value in logits]
+    total = sum(exps)
+    return [value / total for value in exps]
+
+
+def _output_error(probabilities: list[float], label: int) -> list[float]:
+    """2 · MEDIR (pérdida): la cross-entropy, −log de la probabilidad de la clase correcta. Lo que necesita la fase 3
+    es su derivada respecto a los logits: probabilidades − lo esperado (1 en la clase correcta, 0 en las demás)."""
+    return [p - (1.0 if index == label else 0.0) for index, p in enumerate(probabilities)]
+
+
+def _backward(layers: list[Layer], activations: list[list[float]], error: list[float], gradients: list[Layer]) -> None:
+    """3 · CULPAR (backward): suma a `gradients` lo que cada peso contribuyó al error, de la última capa a la primera.
+
+    El gradiente de un peso es el error de su neurona por la activación que le entra. El error baja a la capa anterior
+    a través de los pesos, y la ReLU solo lo deja pasar por las neuronas que estaban activas.
+    """
+    for index in range(len(layers) - 1, -1, -1):
+        matrix, _ = layers[index]
+        grad_matrix, grad_biases = gradients[index]
+        below = activations[index]
+        for row, signal in enumerate(error):
+            grad_row = grad_matrix[row]
+            for column, value in enumerate(below):
+                grad_row[column] += signal * value
+            grad_biases[row] += signal
+        if index > 0:
+            error = [
+                sum(signal * matrix[row][column] for row, signal in enumerate(error)) if below[column] > 0 else 0.0
+                for column in range(len(below))
+            ]
+
+
+def _update(layers: list[Layer], gradients: list[Layer], step: float) -> None:
+    """4 · CORREGIR (update): cada peso da un paso `step` en contra de su gradiente."""
+    for (matrix, biases), (grad_matrix, grad_biases) in zip(layers, gradients, strict=True):
+        for row, grad_row in zip(matrix, grad_matrix, strict=True):
+            for column, value in enumerate(grad_row):
+                row[column] -= step * value
+        for row_index, value in enumerate(grad_biases):
+            biases[row_index] -= step * value
+
+
+def train(
+    weights: list[float], samples: list[Sample], epochs: int, lr: float, batch_size: int, seed: int
+) -> list[float]:
+    """SGD por lotes con cross-entropy. Cada epoch baraja las filas; en cada lote, las fases 1 a 3 fila a fila y la 4
+    una vez, con la media del lote."""
+    layers = _unflatten(weights)
+    rng = random.Random(seed)
+    order = list(samples)
+    for _ in range(epochs):
+        rng.shuffle(order)
+        for start in range(0, len(order), batch_size):
+            batch = order[start : start + batch_size]
+            gradients = _unflatten([0.0] * len(weights))
+            for inputs, label in batch:
+                activations = _forward(layers, inputs)  # 1 · PREDECIR
+                error = _output_error(_probabilities(activations[-1]), label)  # 2 · MEDIR
+                _backward(layers, activations, error, gradients)  # 3 · CULPAR
+            _update(layers, gradients, lr / len(batch))  # 4 · CORREGIR
+    return _flatten(layers)
+
+
+# --- Medir el modelo --------------------------------------------------------------------------------------------------
+
+
+def evaluate(weights: list[float], samples: list[Sample]) -> dict[str, float]:
+    layers = _unflatten(weights)
+    loss, hits = 0.0, 0
+    for inputs, label in samples:
+        logits = _forward(layers, inputs)[-1]
+        loss -= math.log(max(_probabilities(logits)[label], 1e-12))
+        hits += logits.index(max(logits)) == label
+    return {"loss": loss / len(samples), "accuracy": hits / len(samples)}
+
+
 def balanced_accuracy(weights: list[float], samples: list[Sample]) -> float:
     """Media de los aciertos de cada clase presente."""
     layers = _unflatten(weights)
@@ -207,6 +239,9 @@ def balanced_accuracy(weights: list[float], samples: list[Sample]) -> float:
         totals[label] = totals.get(label, 0) + 1
         hits[label] = hits.get(label, 0) + (logits.index(max(logits)) == label)
     return sum(hits[label] / totals[label] for label in totals) / len(totals)
+
+
+# --- El trabajo en el nodo: entradas, entrenamiento y salida ----------------------------------------------------------
 
 
 def _dataset_path(parameters: dict) -> Path:
