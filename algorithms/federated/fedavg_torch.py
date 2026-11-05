@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # FedAvg con PyTorch: lo mismo que fedavg_mlp.py, del que usa todo menos el bucle de entrenamiento.
+# Las cuatro fases de cada lote, como en fedavg_mlp.py; aquí la 3 (culpar, backward) la calcula PyTorch.
 #
 # Mismas entradas, salida, formato de weights y seeds de barajado: los dos scripts se pueden comparar.
 # Corre en una imagen con PyTorch sobre CPU; no usa la red.
@@ -43,9 +44,11 @@ def train(weights: list[float], samples: list, epochs: int, lr: float, batch_siz
             batch = order[start : start + batch_size]
             inputs = torch.tensor([row for row, _ in batch], dtype=torch.float64)
             labels = torch.tensor([label for _, label in batch])
+            logits = network(inputs)  # 1 · PREDECIR (forward)
+            loss = loss_of(logits, labels)  # 2 · MEDIR (pérdida)
             optimizer.zero_grad()
-            loss_of(network(inputs), labels).backward()
-            optimizer.step()
+            loss.backward()  # 3 · CULPAR (backward): el gradiente de cada peso
+            optimizer.step()  # 4 · CORREGIR (update): peso −= lr × gradiente
     layers = [(layer.weight.detach().tolist(), layer.bias.detach().tolist()) for layer in network[::2]]
     return base._flatten(layers)
 
