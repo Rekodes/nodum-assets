@@ -9,6 +9,6 @@ RUN arch=$([ "$TARGETARCH" = arm64 ] && echo aarch64 || echo x86_64) && \
 
 FROM python:3.12-slim
 COPY --from=deps /deps /usr/local/lib/python3.12/site-packages
-COPY algorithms/federated/fedavg_mlp.py algorithms/federated/fedavg_torch.py /app/
+COPY algorithms/federated/fedavg_torch.py /app/
 USER 1000
 ENTRYPOINT ["python", "/app/fedavg_torch.py"]
